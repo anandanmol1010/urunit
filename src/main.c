@@ -479,13 +479,15 @@ struct process_config *parse_process_config(char **string_area, size_t max_sz) {
 			// Number of arguments of the application command. It
 			// must precede the ARV entries.
 			uint32_t argc = 0;
+			size_t argv_count = 0;
 
 			ret = get_uint_val(tmp_field, &argc);
 			if (ret != 0 || conf->argv != NULL) {
 				fprintf(stderr, "Failed to retrieve ARC information from %s\n", tmp_field);
 				break;
 			}
-			if ((size_t)argc > (SIZE_MAX / sizeof(char *)) - 1 ||
+			argv_count = (size_t)argc + 1;
+			if (argv_count == 0 || argv_count > SIZE_MAX / sizeof(char *) ||
 			    (size_t)argc > (size_t)(end - cursor) / 5) {
 				fprintf(stderr, "Application argument count is too large: %u\n", argc);
 				break;
@@ -495,7 +497,7 @@ struct process_config *parse_process_config(char **string_area, size_t max_sz) {
 			// argc == UINT32_MAX, handing calloc a zero-size allocation
 			// that the following ARV writes would then overflow. In size_t
 			// the +1 cannot wrap, and an oversized count fails calloc below.
-			conf->argv = calloc((size_t)argc + 1, sizeof(char *));
+			conf->argv = calloc(argv_count, sizeof(char *));
 			if (!conf->argv) {
 				fprintf(stderr, "Failed to allocate memory for the application arguments\n");
 				break;
